@@ -101,12 +101,12 @@
       <div class="row"><label>Ticker</label><input type="text" id="f_ticker" value="SPCX" style="width:110px;text-align:left"></div>
       <div class="row"><label>Source</label>
         <select id="f_provider">
-          <option value="yahoo">Yahoo Finance · live (no key)</option>
+          <option value="yahoo">CNBC / Yahoo · live (no key)</option>
           <option value="finnhub">Finnhub (free key)</option>
           <option value="twelvedata">Twelve Data (free key)</option>
         </select>
       </div>
-      <div class="row"><label>API key<span class="hint">not needed for Yahoo</span></label><input type="text" id="f_key" placeholder="(Yahoo: leave blank)" style="width:170px;text-align:left"></div>
+      <div class="row"><label>API key<span class="hint">not needed for CNBC/Yahoo</span></label><input type="text" id="f_key" placeholder="(leave blank)" style="width:170px;text-align:left"></div>
       <div class="row"><label>Refresh every</label><span><input type="text" id="f_int" value="1" style="width:55px"> sec</span></div>
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn" id="btnStart">▶ Go live</button>
@@ -131,10 +131,10 @@
   </div>
 
   <div class="foot">
-    <b>Live:</b> this page pulls the Yahoo Finance <b>SPCX</b> tape directly from your browser (with automatic
-    fallback across public fetch relays — no server, no account, no key) and refreshes every second while the tab
-    is open. The <b>manual price / slider</b> overrides the feed for the opening print. Position figures are never
-    stored in this page — they load only from the link's <code>?pos=…&amp;cost=…</code> parameters.
+    <b>Live:</b> this page pulls the <b>SPCX</b> tape straight from your browser — CNBC's public quote feed first
+    (real-time-flagged, refreshes every second), falling back to Yahoo Finance via a public relay if needed. No
+    server, no account, no key. The <b>manual price / slider</b> overrides the feed for the opening print. Position
+    figures are never stored in this page — they load only from the link's <code>?pos=…&amp;cost=…</code> parameters.
   </div>
 </div>
 
@@ -204,39 +204,48 @@ function setPrice(p,flash){livePrice=p; $("m_price").value=p; $("slider").value=
 
 function setStat(t,cls){$("statTxt").textContent=t;$("dot").className="dot"+(cls?" "+cls:"");}
 
-// ---- Yahoo quote, browser-only: same-origin proxy when available, else public CORS relays with failover ----
+// ---- Live quote, browser-only. Chain: dedicated proxy (?proxy=) -> local server -> CNBC direct (sends
+// Access-Control-Allow-Origin:* — no relay needed, sustains 1s polling) -> Yahoo via allorigins relay
+// (cache-busted: the relay otherwise serves quotes up to 5 min stale). ----
+const CNBCQ = t => "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols="+encodeURIComponent(t)+"&requestMethod=itv&noform=1&fund=1&output=json";
 const YQ = t => "https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(t)+"?interval=1m&range=1d&includePrePost=true";
-const RELAYS = [
-  {name:"allorigins",  build:u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)},
-  {name:"corsproxy.io",build:u=>"https://corsproxy.io/?url="+encodeURIComponent(u)},
-  {name:"codetabs",    build:u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u)},
-];
+const AO = u => "https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const URLQ = new URLSearchParams(location.search);
 const PROXY = (URLQ.get("proxy")||"").replace(/\/+$/,"");           // optional dedicated worker/proxy base URL
 const LOCAL = /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
-let srcIdx = 0, lastSrcName = "", failStreak = 0, skipTicks = 0;
+let srcIdx = 0, lastSrcName = "", failStreak = 0, skipTicks = 0, inFlight = false;
 
 function quoteSources(tk){
   const s=[];
-  if(PROXY) s.push({name:"proxy",     url:PROXY+"/quote?symbol="+encodeURIComponent(tk)});
-  if(LOCAL) s.push({name:"local proxy",url:"/quote?symbol="+encodeURIComponent(tk)});
-  RELAYS.forEach(r=>s.push({name:r.name, url:r.build(YQ(tk))}));
+  if(PROXY) s.push({name:"dedicated proxy", url:()=>PROXY+"/quote?symbol="+encodeURIComponent(tk)});
+  if(LOCAL) s.push({name:"local proxy",     url:()=>"/quote?symbol="+encodeURIComponent(tk)});
+  s.push({name:"CNBC live",        url:()=>CNBCQ(tk)});
+  s.push({name:"Yahoo (relayed)",  url:()=>AO(YQ(tk)+"&cb="+Date.now())});
   return s;
 }
+const numQ = s => { const v=parseFloat(String(s).replace(/,/g,"")); return isNaN(v)?null:v; };
 function parseQuote(j){
-  if(j && j.chart && j.chart.result && j.chart.result[0]){
+  if(j && j.FormattedQuoteResult){                                   // CNBC restQuote
+    let q=j.FormattedQuoteResult.FormattedQuote; if(Array.isArray(q)) q=q[0];
+    if(q) return {price:numQ(q.last), prevClose:numQ(q.previous_day_closing), name:q.name};
+  }
+  if(j && j.chart && j.chart.result && j.chart.result[0]){           // Yahoo v8 chart
     const m=j.chart.result[0].meta||{};
     return {price:m.regularMarketPrice, prevClose:m.chartPreviousClose||m.previousClose, name:m.longName||m.shortName};
   }
-  if(j && !j.error && j.price!==undefined) return {price:j.price, prevClose:j.prevClose, name:j.name};
+  if(j && !j.error && j.price!==undefined) return {price:j.price, prevClose:j.prevClose, name:j.name}; // proxy contract
   return null;
 }
-async function yahooFetch(tk){
+async function fetchTimeout(url, ms){
+  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(), ms);
+  try{ return await fetch(url,{cache:"no-store",signal:ctl.signal}); } finally{ clearTimeout(t); }
+}
+async function liveFetch(tk){
   const S=quoteSources(tk);
   for(let k=0;k<S.length;k++){
     const i=(srcIdx+k)%S.length;
     try{
-      const r=await fetch(S[i].url,{cache:"no-store"});
+      const r=await fetchTimeout(S[i].url(), 6000);
       if(!r.ok) throw new Error("HTTP "+r.status);
       const q=parseQuote(await r.json());
       if(q && q.price>0){ srcIdx=i; lastSrcName=S[i].name; return q; }
@@ -246,14 +255,15 @@ async function yahooFetch(tk){
 }
 
 async function poll(){
-  if(manual){return;}
+  if(manual||inFlight){return;}
   if(skipTicks>0){skipTicks--;return;}                              // back-off after repeated failures
   const tk=$("f_ticker").value.trim(), prov=$("f_provider").value, key=$("f_key").value.trim();
   if(!tk){setStat("enter a ticker","err");return;}
   $("tickLab").textContent=tk.toUpperCase();
+  inFlight=true;
   try{
     let price=null,pc=null,name=null;
-    if(prov==="yahoo"){const q=await yahooFetch(tk); price=q.price; pc=q.prevClose; name=q.name;}
+    if(prov==="yahoo"){const q=await liveFetch(tk); price=q.price; pc=q.prevClose; name=q.name;}
     else if(prov==="finnhub"){const j=await(await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(tk)}&token=${key}`)).json();price=j.c;pc=j.pc;}
     else{const j=await(await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(tk)}&apikey=${key}`)).json();price=parseFloat(j.close);pc=parseFloat(j.previous_close);}
     if(name)$("coName").textContent=name;
@@ -264,9 +274,9 @@ async function poll(){
   }catch(e){
     failStreak++;
     if(failStreak>=3){skipTicks=4; setStat("feed retrying…","err");
-      $("feedstat").textContent="Quote relays are busy — backing off a few seconds and retrying automatically. Manual price still works.";}
+      $("feedstat").textContent="Quote sources are busy — backing off a few seconds and retrying automatically. Manual price still works.";}
     else {setStat("feed error","err"); $("feedstat").textContent="Fetch failed ("+e.message+"). Retrying on the next tick. Manual price still works.";}
-  }
+  }finally{inFlight=false;}
 }
 $("btnStart").onclick=()=>{manual=false; const s=Math.max(1,num($("f_int").value))*1000; poll(); clearInterval(timer); timer=setInterval(poll,s);};
 $("btnStop").onclick=()=>{clearInterval(timer);timer=null;setStat("stopped — manual mode","");};
