@@ -79,17 +79,17 @@
 
   <div class="kpis">
     <div class="card"><div class="lab">Change today</div><div class="val" id="k_day">—</div><div class="note">vs prev close</div></div>
-    <div class="card"><div class="lab">Gain vs original</div><div class="val" id="k_gain">—</div><div class="note" id="k_gain_n"></div></div>
-    <div class="card"><div class="lab">MOIC</div><div class="val" id="k_moic">—</div><div class="note">value ÷ original</div></div>
+    <div class="card"><div class="lab">Gain since Nov 2024</div><div class="val" id="k_gain">—</div><div class="note" id="k_gain_n"></div></div>
+    <div class="card"><div class="lab">MOIC</div><div class="val" id="k_moic">—</div><div class="note">value ÷ Nov 2024</div></div>
     <div class="card"><div class="lab">vs $135 reference</div><div class="val" id="k_ref">—</div><div class="note">position move off IPO price</div></div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;border-color:rgba(54,211,153,.45);background:linear-gradient(180deg,#0f1d17,#0e1420)">
-    <h2 style="color:var(--good)">Return since original investment</h2>
+    <h2 style="color:var(--good)">Return since November 2024</h2>
     <div class="kpis" style="margin:0">
-      <div class="card"><div class="lab">Original investment</div><div class="val" id="r_orig">—</div><div class="note">first put in</div></div>
+      <div class="card"><div class="lab">Value (Nov 2024)</div><div class="val" id="r_orig">—</div><div class="note">baseline</div></div>
       <div class="card"><div class="lab">Current value (live)</div><div class="val" id="r_cur" style="color:var(--accent)">—</div><div class="note">@ live SPCX price</div></div>
-      <div class="card"><div class="lab">Return multiple</div><div class="val" id="r_moic">—</div><div class="note">current ÷ original</div></div>
+      <div class="card"><div class="lab">Return multiple</div><div class="val" id="r_moic">—</div><div class="note">current ÷ Nov 2024</div></div>
       <div class="card"><div class="lab">Total return</div><div class="val" id="r_gain">—</div><div class="note" id="r_pct"></div></div>
     </div>
     <div id="r_vsipo" style="margin-top:14px;font-size:14px;font-weight:600">—</div>
@@ -120,10 +120,11 @@
 
     <div class="panel">
       <h2>② Position</h2>
-      <div class="row"><label>Current value @ $135<span class="hint">what it's worth at the $135 reference</span></label><input type="text" id="i_posref" value="6,635,000"></div>
-      <div class="row"><label>Reference price</label><input type="text" id="i_ref" value="135"></div>
-      <div class="row"><label>Original investment<span class="hint">what was first put in</span></label><input type="text" id="i_cost" value="1,200,000"></div>
-      <div class="row"><label>Reference valuation<span class="hint">$1.77T @ $135 → total shares</span></label><input type="text" id="i_val" value="1,770,000,000,000"></div>
+      <div class="row"><label>Value pre-IPO<span class="hint">held at the $800B pre-IPO mark</span></label><input type="text" id="i_posref" value="6,635,000"></div>
+      <div class="row"><label>Pre-IPO valuation<span class="hint">$800B → pre-IPO price/share</span></label><input type="text" id="i_preval" value="800,000,000,000"></div>
+      <div class="row"><label>IPO price</label><input type="text" id="i_ref" value="135"></div>
+      <div class="row"><label>IPO valuation<span class="hint">$1.77T @ $135 → total shares</span></label><input type="text" id="i_val" value="1,770,000,000,000"></div>
+      <div class="row"><label>Value (Nov 2024)<span class="hint">baseline for the return panel</span></label><input type="text" id="i_cost" value="1,600,000"></div>
       <div class="row"><label>Shares held (derived)</label><div class="v" id="d_held">—</div></div>
       <div class="row"><label>SpaceX shares out (derived)</label><div class="v" id="d_total">—</div></div>
       <div class="ctx" id="ctx"></div>
@@ -150,9 +151,11 @@ const pct=n=>(n*100).toFixed(n<0.0001?6:(n<0.01?4:2))+"%";
 let prevClose=null, livePrice=135, manual=false, timer=null;
 
 function recalc(flash){
-  const posRef=num($("i_posref").value), refP=num($("i_ref").value), cost=num($("i_cost").value), refVal=num($("i_val").value);
-  const sharesHeld = refP>0 ? posRef/refP : 0;
-  const totalShares = refP>0 ? refVal/refP : 0;
+  const posPre=num($("i_posref").value), preVal=num($("i_preval").value), refP=num($("i_ref").value), cost=num($("i_cost").value), refVal=num($("i_val").value);
+  const totalShares = refP>0 ? refVal/refP : 0;            // 1.77T / 135 = 13.11B shares out
+  const prePrice = totalShares>0 ? preVal/totalShares : 0; // 800B / 13.11B = $61.02 pre-IPO
+  const sharesHeld = prePrice>0 ? posPre/prePrice : 0;     // 6.635M / 61.02 = 108,740 sh
+  const posAtIPO = sharesHeld*refP;                        // what the stake is worth at the $135 IPO price
   const ownership = totalShares>0 ? sharesHeld/totalShares : 0;
   const p = livePrice>0 ? livePrice : refP;
   const valuation = totalShares*p, livePos = sharesHeld*p;
@@ -166,7 +169,7 @@ function recalc(flash){
   $("k_gain").textContent=dollar(gain); $("k_gain").className="val "+(gain>=0?"up":"down");
   $("k_gain_n").textContent=cost>0?((gain/cost)*100).toFixed(1)+"%":"";
   $("k_moic").textContent=(moic>=100?moic.toFixed(0):moic.toFixed(2))+"×";
-  const vsRef=livePos-posRef; $("k_ref").textContent=(vsRef>=0?"+$":"-$")+commas(Math.abs(Math.round(vsRef)));
+  const vsRef=livePos-posAtIPO; $("k_ref").textContent=(vsRef>=0?"+$":"-$")+commas(Math.abs(Math.round(vsRef)));
   $("k_ref").className="val "+(vsRef>=0?"up":"down");
 
   // Return since original investment (cost basis = original investment)
@@ -176,8 +179,8 @@ function recalc(flash){
   $("r_moic").textContent=cost>0?((rmoic>=100?rmoic.toFixed(0):rmoic.toFixed(2))+"×"):"—";
   $("r_gain").textContent=cost>0?((rgain>=0?"+":"")+dollar(rgain)):"—"; $("r_gain").className="val "+(rgain>=0?"up":"down");
   $("r_pct").textContent=cost>0?((livePos/cost-1)*100).toFixed(1)+"% return":"";
-  const vsIPO=livePos-posRef, vsIPOp=posRef>0?(vsIPO/posRef*100):0;
-  $("r_vsipo").innerHTML = posRef<=0
+  const vsIPO=livePos-posAtIPO, vsIPOp=posAtIPO>0?(vsIPO/posAtIPO*100):0;
+  $("r_vsipo").innerHTML = posAtIPO<=0
     ? "<span style='color:var(--mut)'>No position loaded — add <code>?pos=…&cost=…</code> to the URL.</span>"
     : (Math.abs(vsIPO)<1
       ? "<span style='color:var(--mut)'>At the $135 IPO price — no move yet.</span>"
@@ -192,11 +195,12 @@ function recalc(flash){
     $("k_day").textContent=(d>=0?"+":"")+(dp*100).toFixed(2)+"%"; $("k_day").className="val "+(d>=0?"up":"down");
   } else {$("h_chg").textContent="—";$("h_poschg").textContent="—";$("k_day").textContent="—";}
 
-  $("ctx").innerHTML = posRef>0
-    ? "Context: at $135 the position is "+dollar(posRef)+" ("+commas(sharesHeld)+" sh = "+pct(ownership)+
-      " of SpaceX). Live value scales with SPCX."
+  $("ctx").innerHTML = sharesHeld>0
+    ? "Context: pre-IPO the stake was "+dollar(posPre)+" at an "+money(preVal)+" valuation ⇒ "+
+      commas(sharesHeld)+" sh ("+pct(ownership)+" of SpaceX) ⇒ "+dollar(posAtIPO)+
+      " at the $"+refP+" IPO price. Live value scales with SPCX."
     : "No position loaded. Type values on the left, or open this page with "+
-      "<code>?pos=&lt;current value&gt;&amp;cost=&lt;original&gt;</code> in the URL.";
+      "<code>?pos=&lt;pre-IPO value&gt;&amp;cost=&lt;Nov 2024 value&gt;</code> in the URL.";
   if(flash){$("posBox").classList.remove("flash");void $("posBox").offsetWidth;$("posBox").classList.add("flash");}
 }
 function setPrice(p,flash){livePrice=p; $("m_price").value=p; $("slider").value=Math.max(50,Math.min(400,p));
@@ -280,12 +284,12 @@ async function poll(){
 }
 $("btnStart").onclick=()=>{manual=false; const s=Math.max(1,num($("f_int").value))*1000; poll(); clearInterval(timer); timer=setInterval(poll,s);};
 $("btnStop").onclick=()=>{clearInterval(timer);timer=null;setStat("stopped — manual mode","");};
-["i_posref","i_ref","i_cost","i_val"].forEach(id=>$(id).addEventListener("input",()=>recalc(false)));
+["i_posref","i_preval","i_ref","i_cost","i_val"].forEach(id=>$(id).addEventListener("input",()=>recalc(false)));
 $("m_price").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
 $("slider").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
 
 // URL params (e.g. ?pos=AMOUNT&cost=AMOUNT) override the baked-in defaults
-(function(){const map={pos:"i_posref",cost:"i_cost",ref:"i_ref",val:"i_val",int:"f_int",sym:"f_ticker"};
+(function(){const map={pos:"i_posref",preval:"i_preval",cost:"i_cost",ref:"i_ref",val:"i_val",int:"f_int",sym:"f_ticker"};
   for(const k in map){const v=URLQ.get(k);if(v!==null&&v!=="")$(map[k]).value=v;}})();
 recalc(false);
 // auto-connect on load

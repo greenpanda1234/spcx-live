@@ -7,7 +7,7 @@ position-return math.
   CORS-enabled quote feed first, falling back to Yahoo Finance via a public relay. Refreshes every
   second while open.
 - **Anonymous position.** The page shows a position (no names attached) with live return math.
-  URL parameters override the defaults: `?pos=<current value at $135>&cost=<original investment>`
+  URL parameters override the defaults: `?pos=<value at the pre-IPO mark>&preval=<pre-IPO valuation>&cost=<baseline value>`
   (optional: `&ref=`, `&val=`, `&int=`, `&sym=`, and `&proxy=<base URL>` to use a dedicated quote proxy).
 - Manual price override + slider for when the tape lags.
 
