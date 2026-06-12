@@ -78,7 +78,7 @@
   </div>
 
   <div class="kpis">
-    <div class="card"><div class="lab">Change today</div><div class="val" id="k_day">—</div><div class="note">vs prev close</div></div>
+    <div class="card"><div class="lab">Change today</div><div class="val" id="k_day">—</div><div class="note" id="k_day_n">vs prev close</div></div>
     <div class="card"><div class="lab">Gain since Nov 2024</div><div class="val" id="k_gain">—</div><div class="note" id="k_gain_n"></div></div>
     <div class="card"><div class="lab">MOIC</div><div class="val" id="k_moic">—</div><div class="note">value ÷ Nov 2024</div></div>
     <div class="card"><div class="lab">vs $135 reference</div><div class="val" id="k_ref">—</div><div class="note">position move off IPO price</div></div>
@@ -187,12 +187,19 @@ function recalc(flash){
       : "vs the $135 IPO price: <span class='"+(vsIPO>=0?"up":"down")+"'>"+(vsIPO>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(vsIPO)))+" ("+(vsIPO>=0?"+":"")+vsIPOp.toFixed(1)+"%)</span>");
 
   if(prevClose!=null&&prevClose>0){
-    const d=p-prevClose, dp=d/prevClose, posD=sharesHeld*d;
+    const d=p-prevClose, dp=d/prevClose;
+    // On listing day the feed's "previous close" is just the IPO reference price — the position's
+    // real prior mark is its pre-IPO value, so day-one gains measure from there. From the next
+    // session onward prevClose is a genuine close and the standard daily math resumes.
+    const ipoDay = prePrice>0 && Math.abs(prevClose-refP)<0.5;
+    const base = ipoDay ? prePrice : prevClose;
+    const posD = sharesHeld*(p-base), posDp = base>0 ? (p-base)/base : 0;
     $("h_chg").textContent=(d>=0?"▲ +":"▼ ")+Math.abs(d).toFixed(2)+"  ("+(d>=0?"+":"")+(dp*100).toFixed(2)+"%)";
     $("h_chg").className="chg "+(d>=0?"up":"down");
-    $("h_poschg").textContent=(posD>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(posD)))+" today";
+    $("h_poschg").textContent=(posD>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(posD)))+(ipoDay?" today — vs pre-IPO mark":" today");
     $("h_poschg").className="chg "+(posD>=0?"up":"down");
-    $("k_day").textContent=(d>=0?"+":"")+(dp*100).toFixed(2)+"%"; $("k_day").className="val "+(d>=0?"up":"down");
+    $("k_day").textContent=(posD>=0?"+":"")+(posDp*100).toFixed(1)+"%"; $("k_day").className="val "+(posD>=0?"up":"down");
+    $("k_day_n").textContent = ipoDay ? "position vs pre-IPO mark ($"+prePrice.toFixed(2)+"/sh)" : "position vs prev close";
   } else {$("h_chg").textContent="—";$("h_poschg").textContent="—";$("k_day").textContent="—";}
 
   $("ctx").innerHTML = sharesHeld>0
