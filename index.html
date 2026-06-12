@@ -120,9 +120,9 @@
 
     <div class="panel">
       <h2>② Position</h2>
-      <div class="row"><label>Current value @ $135<span class="hint">what it's worth at the $135 reference</span></label><input type="text" id="i_posref" value="" placeholder="via ?pos=…"></div>
+      <div class="row"><label>Current value @ $135<span class="hint">what it's worth at the $135 reference</span></label><input type="text" id="i_posref" value="6,635,000"></div>
       <div class="row"><label>Reference price</label><input type="text" id="i_ref" value="135"></div>
-      <div class="row"><label>Original investment<span class="hint">what was first put in</span></label><input type="text" id="i_cost" value="" placeholder="via ?cost=…"></div>
+      <div class="row"><label>Original investment<span class="hint">what was first put in</span></label><input type="text" id="i_cost" value="1,200,000"></div>
       <div class="row"><label>Reference valuation<span class="hint">$1.77T @ $135 → total shares</span></label><input type="text" id="i_val" value="1,770,000,000,000"></div>
       <div class="row"><label>Shares held (derived)</label><div class="v" id="d_held">—</div></div>
       <div class="row"><label>SpaceX shares out (derived)</label><div class="v" id="d_total">—</div></div>
@@ -133,8 +133,8 @@
   <div class="foot">
     <b>Live:</b> this page pulls the <b>SPCX</b> tape straight from your browser — CNBC's public quote feed first
     (real-time-flagged, refreshes every second), falling back to Yahoo Finance via a public relay if needed. No
-    server, no account, no key. The <b>manual price / slider</b> overrides the feed for the opening print. Position
-    figures are never stored in this page — they load only from the link's <code>?pos=…&amp;cost=…</code> parameters.
+    server, no account, no key. The <b>manual price / slider</b> overrides the feed for the opening print. The
+    position is anonymous — and <code>?pos=…&amp;cost=…</code> URL parameters override the default figures if needed.
   </div>
 </div>
 
@@ -195,8 +195,8 @@ function recalc(flash){
   $("ctx").innerHTML = posRef>0
     ? "Context: at $135 the position is "+dollar(posRef)+" ("+commas(sharesHeld)+" sh = "+pct(ownership)+
       " of SpaceX). Live value scales with SPCX."
-    : "No position loaded. Open this page with <code>?pos=&lt;current value&gt;&amp;cost=&lt;original&gt;</code> "+
-      "in the URL (or type values on the left) — figures are never stored in the page itself.";
+    : "No position loaded. Type values on the left, or open this page with "+
+      "<code>?pos=&lt;current value&gt;&amp;cost=&lt;original&gt;</code> in the URL.";
   if(flash){$("posBox").classList.remove("flash");void $("posBox").offsetWidth;$("posBox").classList.add("flash");}
 }
 function setPrice(p,flash){livePrice=p; $("m_price").value=p; $("slider").value=Math.max(50,Math.min(400,p));
@@ -284,7 +284,7 @@ $("btnStop").onclick=()=>{clearInterval(timer);timer=null;setStat("stopped — m
 $("m_price").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
 $("slider").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
 
-// position comes ONLY from the URL (e.g. ?pos=AMOUNT&cost=AMOUNT) — no figures live in this page
+// URL params (e.g. ?pos=AMOUNT&cost=AMOUNT) override the baked-in defaults
 (function(){const map={pos:"i_posref",cost:"i_cost",ref:"i_ref",val:"i_val",int:"f_int",sym:"f_ticker"};
   for(const k in map){const v=URLQ.get(k);if(v!==null&&v!=="")$(map[k]).value=v;}})();
 recalc(false);
