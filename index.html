@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>SpaceX (SPCX) · Live</title>
+<style>
+  :root{--bg:#0a0e17;--panel:#121826;--panel2:#0e1420;--line:#1f2a3d;--txt:#e8eef7;--mut:#8a9bb5;
+        --accent:#5b8cff;--good:#36d399;--warn:#f5a524;--bad:#f87272;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:
+       radial-gradient(1200px 600px at 80% -10%,#16203a 0%,transparent 60%),
+       radial-gradient(900px 500px at 10% 110%,#101a2e 0%,transparent 55%),var(--bg);
+       color:var(--txt);min-height:100vh;padding:24px 30px 60px}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .logo{font-weight:800;font-size:25px;letter-spacing:1px}.logo .x{color:var(--accent)}
+  .sub{color:var(--mut);font-size:13px;margin-top:2px}
+  .status{display:flex;align-items:center;gap:9px;font-size:12.5px;background:var(--panel);
+          border:1px solid var(--line);padding:9px 13px;border-radius:10px;color:var(--mut)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#566;transition:.2s}
+  .dot.on{background:var(--good);animation:p 1.6s infinite}.dot.err{background:var(--bad)}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(54,211,153,.5)}70%{box-shadow:0 0 0 9px rgba(54,211,153,0)}100%{box-shadow:0 0 0 0 rgba(54,211,153,0)}}
+  .hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .big{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;padding:20px 24px}
+  .big .lab{color:var(--mut);font-size:12px;letter-spacing:.6px;text-transform:uppercase}
+  .price{font-size:52px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;margin-top:6px}
+  .posval{font-size:46px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.05;margin-top:6px}
+  .chg{font-size:17px;font-weight:600;margin-top:8px;font-variant-numeric:tabular-nums}
+  .up{color:var(--good)}.down{color:var(--bad)}
+  .flash{animation:fl .7s}@keyframes fl{0%{background:rgba(91,140,255,.18)}100%{background:transparent}}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px 17px}
+  .card .lab{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+  .card .val{font-size:23px;font-weight:700;margin-top:7px;font-variant-numeric:tabular-nums}
+  .card .note{font-size:11.5px;color:var(--mut);margin-top:5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  h2{font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:0}.row label{font-size:13.5px}.row .hint{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+  .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+  input,select{background:#0b1120;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;font-size:14px}
+  input[type=text]{width:150px;text-align:right;font-variant-numeric:tabular-nums}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.18)}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn.sec{background:#1b2540;color:var(--txt)}.btn:active{transform:translateY(1px)}
+  .feedstat{font-size:12.5px;color:var(--mut);margin-top:10px;line-height:1.5}
+  .ctx{margin-top:14px;border-radius:11px;padding:12px 14px;font-size:12.5px;line-height:1.5;background:rgba(91,140,255,.07);border:1px solid rgba(91,140,255,.3);color:var(--mut)}
+  .foot{color:var(--mut);font-size:12px;margin-top:20px;line-height:1.6}
+  @media(max-width:900px){.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="logo">Space<span class="x">X</span> · <span id="tickLab">SPCX</span> LIVE</div>
+      <div class="sub" id="coName">Space Exploration Technologies Corp. — live price &amp; position</div>
+    </div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statTxt">connecting…</span></div>
+  </header>
+
+  <div class="hero">
+    <div class="big" id="priceBox">
+      <div class="lab">SPCX — last price</div>
+      <div class="price" id="h_price">$135.00</div>
+      <div class="chg" id="h_chg">—</div>
+      <div class="note" style="color:var(--mut);font-size:12px;margin-top:8px">implied SpaceX valuation <span id="h_val">$1.77T</span> · <span id="h_upd">—</span></div>
+    </div>
+    <div class="big" id="posBox">
+      <div class="lab">Current value (live)</div>
+      <div class="posval" id="h_pos">—</div>
+      <div class="chg" id="h_poschg">—</div>
+      <div class="note" style="color:var(--mut);font-size:12px;margin-top:8px"><span id="h_held">—</span> shares · <span id="h_own">—</span> of SpaceX</div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="card"><div class="lab">Change today</div><div class="val" id="k_day">—</div><div class="note">vs prev close</div></div>
+    <div class="card"><div class="lab">Gain vs original</div><div class="val" id="k_gain">—</div><div class="note" id="k_gain_n"></div></div>
+    <div class="card"><div class="lab">MOIC</div><div class="val" id="k_moic">—</div><div class="note">value ÷ original</div></div>
+    <div class="card"><div class="lab">vs $135 reference</div><div class="val" id="k_ref">—</div><div class="note">position move off IPO price</div></div>
+  </div>
+
+  <div class="panel" style="margin-bottom:16px;border-color:rgba(54,211,153,.45);background:linear-gradient(180deg,#0f1d17,#0e1420)">
+    <h2 style="color:var(--good)">Return since original investment</h2>
+    <div class="kpis" style="margin:0">
+      <div class="card"><div class="lab">Original investment</div><div class="val" id="r_orig">—</div><div class="note">first put in</div></div>
+      <div class="card"><div class="lab">Current value (live)</div><div class="val" id="r_cur" style="color:var(--accent)">—</div><div class="note">@ live SPCX price</div></div>
+      <div class="card"><div class="lab">Return multiple</div><div class="val" id="r_moic">—</div><div class="note">current ÷ original</div></div>
+      <div class="card"><div class="lab">Total return</div><div class="val" id="r_gain">—</div><div class="note" id="r_pct"></div></div>
+    </div>
+    <div id="r_vsipo" style="margin-top:14px;font-size:14px;font-weight:600">—</div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>① Live feed</h2>
+      <div class="row"><label>Ticker</label><input type="text" id="f_ticker" value="SPCX" style="width:110px;text-align:left"></div>
+      <div class="row"><label>Source</label>
+        <select id="f_provider">
+          <option value="yahoo">Yahoo Finance · live (no key)</option>
+          <option value="finnhub">Finnhub (free key)</option>
+          <option value="twelvedata">Twelve Data (free key)</option>
+        </select>
+      </div>
+      <div class="row"><label>API key<span class="hint">not needed for Yahoo</span></label><input type="text" id="f_key" placeholder="(Yahoo: leave blank)" style="width:170px;text-align:left"></div>
+      <div class="row"><label>Refresh every</label><span><input type="text" id="f_int" value="1" style="width:55px"> sec</span></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn" id="btnStart">▶ Go live</button>
+        <button class="btn sec" id="btnStop">■ Stop</button>
+      </div>
+      <div class="feedstat" id="feedstat">Auto-connecting to the live SPCX feed…</div>
+      <h2 style="margin-top:18px">Manual / opening-print override</h2>
+      <div class="row"><label>Price per share<span class="hint">overrides the feed — type the IPO print</span></label><input type="text" id="m_price" value="135"></div>
+      <input type="range" id="slider" min="50" max="400" step="1" value="135" style="width:100%;accent-color:var(--accent);margin-top:6px">
+    </div>
+
+    <div class="panel">
+      <h2>② Position</h2>
+      <div class="row"><label>Current value @ $135<span class="hint">what it's worth at the $135 reference</span></label><input type="text" id="i_posref" value="" placeholder="via ?pos=…"></div>
+      <div class="row"><label>Reference price</label><input type="text" id="i_ref" value="135"></div>
+      <div class="row"><label>Original investment<span class="hint">what was first put in</span></label><input type="text" id="i_cost" value="" placeholder="via ?cost=…"></div>
+      <div class="row"><label>Reference valuation<span class="hint">$1.77T @ $135 → total shares</span></label><input type="text" id="i_val" value="1,770,000,000,000"></div>
+      <div class="row"><label>Shares held (derived)</label><div class="v" id="d_held">—</div></div>
+      <div class="row"><label>SpaceX shares out (derived)</label><div class="v" id="d_total">—</div></div>
+      <div class="ctx" id="ctx"></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>Live:</b> this page pulls the Yahoo Finance <b>SPCX</b> tape directly from your browser (with automatic
+    fallback across public fetch relays — no server, no account, no key) and refreshes every second while the tab
+    is open. The <b>manual price / slider</b> overrides the feed for the opening print. Position figures are never
+    stored in this page — they load only from the link's <code>?pos=…&amp;cost=…</code> parameters.
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const num=s=>{const v=parseFloat(String(s).replace(/[^0-9.\-]/g,""));return isNaN(v)?0:v;};
+function money(n){const a=Math.abs(n);
+  if(a>=1e12)return "$"+(n/1e12).toFixed(2)+"T";if(a>=1e9)return "$"+(n/1e9).toFixed(2)+"B";
+  if(a>=1e6)return "$"+(n/1e6).toFixed(2)+"M";if(a>=1e3)return "$"+(n/1e3).toFixed(1)+"K";return "$"+n.toFixed(0);}
+const commas=n=>n.toLocaleString("en-US",{maximumFractionDigits:0});
+const dollar=n=>(n<0?"-$":"$")+commas(Math.abs(Math.round(n)));
+const pct=n=>(n*100).toFixed(n<0.0001?6:(n<0.01?4:2))+"%";
+let prevClose=null, livePrice=135, manual=false, timer=null;
+
+function recalc(flash){
+  const posRef=num($("i_posref").value), refP=num($("i_ref").value), cost=num($("i_cost").value), refVal=num($("i_val").value);
+  const sharesHeld = refP>0 ? posRef/refP : 0;
+  const totalShares = refP>0 ? refVal/refP : 0;
+  const ownership = totalShares>0 ? sharesHeld/totalShares : 0;
+  const p = livePrice>0 ? livePrice : refP;
+  const valuation = totalShares*p, livePos = sharesHeld*p;
+  const gain = livePos-cost, moic = cost>0?livePos/cost:0;
+
+  $("h_price").textContent="$"+p.toFixed(2);
+  $("h_val").textContent=money(valuation);
+  $("h_pos").textContent=dollar(livePos);
+  $("h_held").textContent=commas(sharesHeld); $("h_own").textContent=pct(ownership);
+  $("d_held").textContent=commas(sharesHeld)+" sh"; $("d_total").textContent=(totalShares/1e9).toFixed(2)+"B";
+  $("k_gain").textContent=dollar(gain); $("k_gain").className="val "+(gain>=0?"up":"down");
+  $("k_gain_n").textContent=cost>0?((gain/cost)*100).toFixed(1)+"%":"";
+  $("k_moic").textContent=(moic>=100?moic.toFixed(0):moic.toFixed(2))+"×";
+  const vsRef=livePos-posRef; $("k_ref").textContent=(vsRef>=0?"+$":"-$")+commas(Math.abs(Math.round(vsRef)));
+  $("k_ref").className="val "+(vsRef>=0?"up":"down");
+
+  // Return since original investment (cost basis = original investment)
+  const rmoic = cost>0 ? livePos/cost : 0, rgain = livePos-cost;
+  $("r_orig").textContent=cost>0?dollar(cost):"—";
+  $("r_cur").textContent=cost>0?dollar(livePos):"—";
+  $("r_moic").textContent=cost>0?((rmoic>=100?rmoic.toFixed(0):rmoic.toFixed(2))+"×"):"—";
+  $("r_gain").textContent=cost>0?((rgain>=0?"+":"")+dollar(rgain)):"—"; $("r_gain").className="val "+(rgain>=0?"up":"down");
+  $("r_pct").textContent=cost>0?((livePos/cost-1)*100).toFixed(1)+"% return":"";
+  const vsIPO=livePos-posRef, vsIPOp=posRef>0?(vsIPO/posRef*100):0;
+  $("r_vsipo").innerHTML = posRef<=0
+    ? "<span style='color:var(--mut)'>No position loaded — add <code>?pos=…&cost=…</code> to the URL.</span>"
+    : (Math.abs(vsIPO)<1
+      ? "<span style='color:var(--mut)'>At the $135 IPO price — no move yet.</span>"
+      : "vs the $135 IPO price: <span class='"+(vsIPO>=0?"up":"down")+"'>"+(vsIPO>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(vsIPO)))+" ("+(vsIPO>=0?"+":"")+vsIPOp.toFixed(1)+"%)</span>";
+
+  if(prevClose!=null&&prevClose>0){
+    const d=p-prevClose, dp=d/prevClose, posD=sharesHeld*d;
+    $("h_chg").textContent=(d>=0?"▲ +":"▼ ")+Math.abs(d).toFixed(2)+"  ("+(d>=0?"+":"")+(dp*100).toFixed(2)+"%)";
+    $("h_chg").className="chg "+(d>=0?"up":"down");
+    $("h_poschg").textContent=(posD>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(posD)))+" today";
+    $("h_poschg").className="chg "+(posD>=0?"up":"down");
+    $("k_day").textContent=(d>=0?"+":"")+(dp*100).toFixed(2)+"%"; $("k_day").className="val "+(d>=0?"up":"down");
+  } else {$("h_chg").textContent="—";$("h_poschg").textContent="—";$("k_day").textContent="—";}
+
+  $("ctx").innerHTML = posRef>0
+    ? "Context: at $135 the position is "+dollar(posRef)+" ("+commas(sharesHeld)+" sh = "+pct(ownership)+
+      " of SpaceX). Live value scales with SPCX."
+    : "No position loaded. Open this page with <code>?pos=&lt;current value&gt;&amp;cost=&lt;original&gt;</code> "+
+      "in the URL (or type values on the left) — figures are never stored in the page itself.";
+  if(flash){$("posBox").classList.remove("flash");void $("posBox").offsetWidth;$("posBox").classList.add("flash");}
+}
+function setPrice(p,flash){livePrice=p; $("m_price").value=p; $("slider").value=Math.max(50,Math.min(400,p));
+  $("h_upd").textContent="updated "+new Date().toLocaleTimeString(); recalc(flash);}
+
+function setStat(t,cls){$("statTxt").textContent=t;$("dot").className="dot"+(cls?" "+cls:"");}
+
+// ---- Yahoo quote, browser-only: same-origin proxy when available, else public CORS relays with failover ----
+const YQ = t => "https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(t)+"?interval=1m&range=1d&includePrePost=true";
+const RELAYS = [
+  {name:"allorigins",  build:u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)},
+  {name:"corsproxy.io",build:u=>"https://corsproxy.io/?url="+encodeURIComponent(u)},
+  {name:"codetabs",    build:u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u)},
+];
+const URLQ = new URLSearchParams(location.search);
+const PROXY = (URLQ.get("proxy")||"").replace(/\/+$/,"");           // optional dedicated worker/proxy base URL
+const LOCAL = /^(localhost|127\.|192\.168\.|\[::1\])/.test(location.hostname);
+let srcIdx = 0, lastSrcName = "", failStreak = 0, skipTicks = 0;
+
+function quoteSources(tk){
+  const s=[];
+  if(PROXY) s.push({name:"proxy",     url:PROXY+"/quote?symbol="+encodeURIComponent(tk)});
+  if(LOCAL) s.push({name:"local proxy",url:"/quote?symbol="+encodeURIComponent(tk)});
+  RELAYS.forEach(r=>s.push({name:r.name, url:r.build(YQ(tk))}));
+  return s;
+}
+function parseQuote(j){
+  if(j && j.chart && j.chart.result && j.chart.result[0]){
+    const m=j.chart.result[0].meta||{};
+    return {price:m.regularMarketPrice, prevClose:m.chartPreviousClose||m.previousClose, name:m.longName||m.shortName};
+  }
+  if(j && !j.error && j.price!==undefined) return {price:j.price, prevClose:j.prevClose, name:j.name};
+  return null;
+}
+async function yahooFetch(tk){
+  const S=quoteSources(tk);
+  for(let k=0;k<S.length;k++){
+    const i=(srcIdx+k)%S.length;
+    try{
+      const r=await fetch(S[i].url,{cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const q=parseQuote(await r.json());
+      if(q && q.price>0){ srcIdx=i; lastSrcName=S[i].name; return q; }
+    }catch(e){/* try next source */}
+  }
+  throw new Error("all quote sources failed");
+}
+
+async function poll(){
+  if(manual){return;}
+  if(skipTicks>0){skipTicks--;return;}                              // back-off after repeated failures
+  const tk=$("f_ticker").value.trim(), prov=$("f_provider").value, key=$("f_key").value.trim();
+  if(!tk){setStat("enter a ticker","err");return;}
+  $("tickLab").textContent=tk.toUpperCase();
+  try{
+    let price=null,pc=null,name=null;
+    if(prov==="yahoo"){const q=await yahooFetch(tk); price=q.price; pc=q.prevClose; name=q.name;}
+    else if(prov==="finnhub"){const j=await(await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(tk)}&token=${key}`)).json();price=j.c;pc=j.pc;}
+    else{const j=await(await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(tk)}&apikey=${key}`)).json();price=parseFloat(j.close);pc=parseFloat(j.previous_close);}
+    if(name)$("coName").textContent=name;
+    if(price&&price>0){if(pc&&pc>0)prevClose=pc; setPrice(price,true); failStreak=0;
+      setStat("LIVE · "+tk.toUpperCase()+" $"+price.toFixed(2)+" · "+new Date().toLocaleTimeString(),"on");
+      $("feedstat").textContent="Connected via "+(prov==="yahoo"?(lastSrcName||"Yahoo"):prov)+". Auto-refreshing every "+Math.max(1,num($("f_int").value))+"s.";
+    } else {setStat("no quote yet for "+tk.toUpperCase(),"err"); $("feedstat").textContent="Feed reachable, no live price yet (pre-trade / market closed). Manual price still works.";}
+  }catch(e){
+    failStreak++;
+    if(failStreak>=3){skipTicks=4; setStat("feed retrying…","err");
+      $("feedstat").textContent="Quote relays are busy — backing off a few seconds and retrying automatically. Manual price still works.";}
+    else {setStat("feed error","err"); $("feedstat").textContent="Fetch failed ("+e.message+"). Retrying on the next tick. Manual price still works.";}
+  }
+}
+$("btnStart").onclick=()=>{manual=false; const s=Math.max(1,num($("f_int").value))*1000; poll(); clearInterval(timer); timer=setInterval(poll,s);};
+$("btnStop").onclick=()=>{clearInterval(timer);timer=null;setStat("stopped — manual mode","");};
+["i_posref","i_ref","i_cost","i_val"].forEach(id=>$(id).addEventListener("input",()=>recalc(false)));
+$("m_price").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
+$("slider").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
+
+// position comes ONLY from the URL (e.g. ?pos=AMOUNT&cost=AMOUNT) — no figures live in this page
+(function(){const map={pos:"i_posref",cost:"i_cost",ref:"i_ref",val:"i_val",int:"f_int",sym:"f_ticker"};
+  for(const k in map){const v=URLQ.get(k);if(v!==null&&v!=="")$(map[k]).value=v;}})();
+recalc(false);
+// auto-connect on load
+$("btnStart").click();
+</script>
+</body>
+</html>
