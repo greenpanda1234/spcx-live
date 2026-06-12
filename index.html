@@ -181,7 +181,7 @@ function recalc(flash){
     ? "<span style='color:var(--mut)'>No position loaded — add <code>?pos=…&cost=…</code> to the URL.</span>"
     : (Math.abs(vsIPO)<1
       ? "<span style='color:var(--mut)'>At the $135 IPO price — no move yet.</span>"
-      : "vs the $135 IPO price: <span class='"+(vsIPO>=0?"up":"down")+"'>"+(vsIPO>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(vsIPO)))+" ("+(vsIPO>=0?"+":"")+vsIPOp.toFixed(1)+"%)</span>";
+      : "vs the $135 IPO price: <span class='"+(vsIPO>=0?"up":"down")+"'>"+(vsIPO>=0?"▲ +$":"▼ -$")+commas(Math.abs(Math.round(vsIPO)))+" ("+(vsIPO>=0?"+":"")+vsIPOp.toFixed(1)+"%)</span>");
 
   if(prevClose!=null&&prevClose>0){
     const d=p-prevClose, dp=d/prevClose, posD=sharesHeld*d;
