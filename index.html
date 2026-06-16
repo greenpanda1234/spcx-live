@@ -49,7 +49,31 @@
   .feedstat{font-size:12.5px;color:var(--mut);margin-top:10px;line-height:1.5}
   .ctx{margin-top:14px;border-radius:11px;padding:12px 14px;font-size:12.5px;line-height:1.5;background:rgba(91,140,255,.07);border:1px solid rgba(91,140,255,.3);color:var(--mut)}
   .foot{color:var(--mut);font-size:12px;margin-top:20px;line-height:1.6}
-  @media(max-width:900px){.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+  /* collapsible price-history panel */
+  .hist{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
+  .hist>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:16px 20px;user-select:none}
+  .hist>summary::-webkit-details-marker{display:none}
+  .hist .ht{font-weight:700;font-size:15px}.hist .hsub{color:var(--mut);font-size:12.5px;flex:1}
+  .hist .chev{color:var(--mut);transition:transform .2s;font-size:13px}
+  .hist[open] .chev{transform:rotate(180deg)}.hist[open]>summary{border-bottom:1px solid var(--line)}
+  .histbody{padding:16px 20px 20px}
+  .ranges{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .rbtn{background:#0b1120;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .rbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .chartbox{position:relative;height:300px}
+  #histCanvas{width:100%;height:100%;display:block;touch-action:pan-y}
+  .chartmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px;pointer-events:none;text-align:center;padding:0 20px}
+  .tip{position:absolute;pointer-events:none;background:#0b1120;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;line-height:1.35;color:var(--txt);transform:translate(-50%,-120%);white-space:nowrap;opacity:0;transition:opacity .08s;font-variant-numeric:tabular-nums}
+  .hstats{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;color:var(--mut);font-size:12.5px}
+  .hstats b{color:var(--txt);font-variant-numeric:tabular-nums}.hstats b.up{color:var(--good)}.hstats b.down{color:var(--bad)}
+  @media(max-width:900px){.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.card{min-width:0}}
+  @media(max-width:560px){
+    body{padding:20px 16px 56px}
+    .kpis .card .val{font-size:19px}            /* keep figures inside their bubbles on phones */
+    #returnPanel .kpis{grid-template-columns:1fr} /* stack the return cards so big $ values never clip */
+    #returnPanel .card .val{font-size:22px}
+    .chartbox{height:240px}.hist .hsub{display:none}
+  }
 </style>
 </head>
 <body>
@@ -84,7 +108,7 @@
     <div class="card"><div class="lab">vs $135 reference</div><div class="val" id="k_ref">—</div><div class="note">position move off IPO price</div></div>
   </div>
 
-  <div class="panel" style="margin-bottom:16px;border-color:rgba(54,211,153,.45);background:linear-gradient(180deg,#0f1d17,#0e1420)">
+  <div class="panel" id="returnPanel" style="margin-bottom:16px;border-color:rgba(54,211,153,.45);background:linear-gradient(180deg,#0f1d17,#0e1420)">
     <h2 style="color:var(--good)">Return since November 2024</h2>
     <div class="kpis" style="margin:0">
       <div class="card"><div class="lab">Value (Nov 2024)</div><div class="val" id="r_orig">—</div><div class="note">baseline</div></div>
@@ -130,6 +154,29 @@
       <div class="ctx" id="ctx"></div>
     </div>
   </div>
+
+  <details class="hist" id="hist">
+    <summary>
+      <span class="ht">📈 Price history · time series</span>
+      <span class="hsub">SPCX price performance since listing — click to expand</span>
+      <span class="chev">▾</span>
+    </summary>
+    <div class="histbody">
+      <div class="ranges">
+        <button class="rbtn on" data-r="1d"  data-i="5m">1D</button>
+        <button class="rbtn"    data-r="5d"  data-i="15m">5D</button>
+        <button class="rbtn"    data-r="1mo" data-i="60m">1M</button>
+        <button class="rbtn"    data-r="max" data-i="1d">Max</button>
+      </div>
+      <div class="chartbox">
+        <canvas id="histCanvas"></canvas>
+        <div class="chartmsg" id="chartmsg">Loading…</div>
+        <div class="tip" id="chartTip"></div>
+      </div>
+      <div class="hstats" id="hstats"></div>
+      <div class="feedstat" style="margin-top:10px">Intraday &amp; daily history via Yahoo Finance (relayed, on-demand). SPCX began trading 2026-06-12, so longer ranges show every session available. Hover the chart to scrub the time series.</div>
+    </div>
+  </details>
 
   <div class="foot">
     <b>Live:</b> this page pulls the <b>SPCX</b> tape straight from your browser — CNBC's public quote feed first
@@ -294,6 +341,95 @@ $("btnStop").onclick=()=>{clearInterval(timer);timer=null;setStat("stopped — m
 ["i_posref","i_preval","i_ref","i_cost","i_val"].forEach(id=>$(id).addEventListener("input",()=>recalc(false)));
 $("m_price").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
 $("slider").addEventListener("input",e=>{manual=true;setStat("manual price","");setPrice(num(e.target.value),false);});
+
+// ---- Price history (collapsible, on-demand). Yahoo chart endpoint fetched through the same allorigins
+// relay as the quote fallback; only fires when the panel is opened or a range button is clicked. ----
+const YCHART=(t,rng,iv)=>"https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(t)+"?interval="+iv+"&range="+rng+"&includePrePost=false";
+let hist={times:[],prices:[],rng:"1D"}, histLoaded=false, histBusy=false, geo=null;
+
+async function fetchHistory(rng,iv){
+  const tk=($("f_ticker").value.trim()||"SPCX").toUpperCase(), base=YCHART(tk,rng,iv);
+  for(let a=0;a<2;a++){                                              // relay is flaky — one quick retry
+    try{
+      const r=await fetchTimeout(AO(base+"&cb="+(Date.now()+a)),9000); if(!r.ok) continue;
+      const j=await r.json(), res=j&&j.chart&&j.chart.result&&j.chart.result[0];
+      if(!res||!res.timestamp||!res.indicators) continue;
+      const cl=res.indicators.quote[0].close, ts=res.timestamp, T=[],P=[];
+      for(let i=0;i<ts.length;i++){ if(cl[i]!=null){ T.push(ts[i]); P.push(cl[i]); } }
+      if(P.length>1) return {times:T,prices:P};
+    }catch(e){}
+  }
+  return null;
+}
+async function loadHistory(rng,iv,label){
+  if(histBusy) return; histBusy=true; $("chartTip").style.opacity=0;
+  $("chartmsg").style.display="flex"; $("chartmsg").textContent="Loading "+label+" history…";
+  const d=await fetchHistory(rng,iv); histBusy=false;
+  if(!d){ $("chartmsg").textContent="History feed is busy — tap a range again to retry."; histLoaded=false; $("hstats").innerHTML=""; return; }
+  hist={times:d.times,prices:d.prices,rng:label}; histLoaded=true;
+  $("chartmsg").style.display="none"; drawHist(); renderHStats();
+}
+function histFmt(){
+  const T=hist.times, span=T[T.length-1]-T[0], intraday=span<3*86400;
+  return t=>{ const d=new Date(t*1000);
+    return intraday ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})
+                    : d.toLocaleDateString([],{month:"short",day:"numeric"}); };
+}
+function renderHStats(){
+  const P=hist.prices, hi=Math.max(...P), lo=Math.min(...P), first=P[0], last=P[P.length-1];
+  const chg=last-first, chgp=first>0?chg/first*100:0, cls=chg>=0?"up":"down";
+  $("hstats").innerHTML=
+    "<span>Range <b>"+hist.rng+"</b></span>"+
+    "<span>Last <b>$"+last.toFixed(2)+"</b></span>"+
+    "<span>High <b>$"+hi.toFixed(2)+"</b></span>"+
+    "<span>Low <b>$"+lo.toFixed(2)+"</b></span>"+
+    "<span>Change <b class='"+cls+"'>"+(chg>=0?"+":"")+chg.toFixed(2)+" ("+(chgp>=0?"+":"")+chgp.toFixed(2)+"%)</b></span>";
+}
+function drawHist(hoverIdx){
+  const cv=$("histCanvas"), P=hist.prices, T=hist.times; if(!P||P.length<2||!cv.clientWidth) return;
+  const dpr=window.devicePixelRatio||1, cw=cv.clientWidth, ch=cv.clientHeight;
+  cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr);
+  const ctx=cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cw,ch);
+  const padL=52,padR=14,padT=14,padB=28, W=cw-padL-padR, H=ch-padT-padB;
+  const lo=Math.min(...P), hi=Math.max(...P), pd=(hi-lo)*0.08||1, ymin=lo-pd, ymax=hi+pd;
+  const xAt=i=>padL+(P.length<2?0:i/(P.length-1))*W, yAt=v=>padT+(1-(v-ymin)/(ymax-ymin))*H;
+  geo={padL,W,n:P.length};
+  ctx.font="11px 'Segoe UI',system-ui,sans-serif"; ctx.textBaseline="middle"; ctx.textAlign="right";
+  for(let i=0;i<=4;i++){ const v=ymin+(ymax-ymin)*i/4, yy=yAt(v);
+    ctx.strokeStyle="rgba(255,255,255,.06)"; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(padL+W,yy); ctx.stroke();
+    ctx.fillStyle="#8a9bb5"; ctx.fillText("$"+v.toFixed(0),padL-8,yy); }
+  const up=P[P.length-1]>=P[0], col=up?"#36d399":"#f87272";
+  const g=ctx.createLinearGradient(0,padT,0,padT+H);
+  g.addColorStop(0,up?"rgba(54,211,153,.26)":"rgba(248,114,114,.26)"); g.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.beginPath(); ctx.moveTo(xAt(0),yAt(P[0])); for(let i=1;i<P.length;i++) ctx.lineTo(xAt(i),yAt(P[i]));
+  ctx.lineTo(xAt(P.length-1),padT+H); ctx.lineTo(xAt(0),padT+H); ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(xAt(0),yAt(P[0])); for(let i=1;i<P.length;i++) ctx.lineTo(xAt(i),yAt(P[i]));
+  ctx.lineWidth=2; ctx.lineJoin="round"; ctx.strokeStyle=col; ctx.stroke();
+  const fmt=histFmt(); ctx.fillStyle="#8a9bb5"; ctx.textBaseline="alphabetic";
+  [0,Math.floor((T.length-1)/2),T.length-1].forEach((idx,k)=>{ ctx.textAlign=k===0?"left":(k===2?"right":"center");
+    const xx=k===0?padL:(k===2?padL+W:padL+W/2); ctx.fillText(fmt(T[idx]),xx,padT+H+18); });
+  if(hoverIdx!=null&&hoverIdx>=0&&hoverIdx<P.length){
+    const hx=xAt(hoverIdx), hy=yAt(P[hoverIdx]);
+    ctx.strokeStyle="rgba(255,255,255,.2)"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(hx,padT); ctx.lineTo(hx,padT+H); ctx.stroke();
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(hx,hy,4,0,7); ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle="#0a0e17"; ctx.stroke();
+    const tip=$("chartTip"); tip.innerHTML="<b>$"+P[hoverIdx].toFixed(2)+"</b><br>"+fmt(T[hoverIdx]);
+    tip.style.left=Math.max(46,Math.min(cw-46,hx))+"px"; tip.style.top=hy+"px"; tip.style.opacity=1;
+  }
+}
+(function(){
+  const cv=$("histCanvas");
+  cv.addEventListener("pointermove",ev=>{ if(!histLoaded||!geo) return;
+    const rect=cv.getBoundingClientRect(); let f=(ev.clientX-rect.left-geo.padL)/geo.W;
+    f=Math.max(0,Math.min(1,f)); drawHist(Math.round(f*(geo.n-1))); });
+  cv.addEventListener("pointerleave",()=>{ if(histLoaded){ $("chartTip").style.opacity=0; drawHist(); } });
+  $("hist").addEventListener("toggle",function(){ if(!this.open) return;
+    if(histLoaded) drawHist(); else if(!histBusy) loadHistory("1d","5m","1D"); });
+  document.querySelectorAll(".rbtn").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".rbtn").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+    loadHistory(b.dataset.r,b.dataset.i,b.textContent.trim()); }));
+  window.addEventListener("resize",()=>{ if($("hist").open&&histLoaded) drawHist(); });
+})();
 
 // URL params (e.g. ?pos=AMOUNT&cost=AMOUNT) override the baked-in defaults
 (function(){const map={pos:"i_posref",preval:"i_preval",cost:"i_cost",ref:"i_ref",val:"i_val",int:"f_int",sym:"f_ticker"};
