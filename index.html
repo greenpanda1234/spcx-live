@@ -348,16 +348,24 @@ const YCHART=(t,rng,iv)=>"https://query1.finance.yahoo.com/v8/finance/chart/"+en
 let hist={times:[],prices:[],rng:"1D"}, histLoaded=false, histBusy=false, geo=null;
 
 async function fetchHistory(rng,iv){
-  const tk=($("f_ticker").value.trim()||"SPCX").toUpperCase(), base=YCHART(tk,rng,iv);
-  for(let a=0;a<2;a++){                                              // relay is flaky — one quick retry
+  const tk=($("f_ticker").value.trim()||"SPCX").toUpperCase();
+  const u=YCHART(tk,rng,iv)+"&cb="+Date.now();                       // cache-buster bypasses relay edge caches
+  const relays=[                                                     // tried in order; first one with data wins
+    "https://api.allorigins.win/raw?url="+encodeURIComponent(u),
+    "https://corsproxy.io/?url="+encodeURIComponent(u),
+    "https://api.allorigins.win/get?url="+encodeURIComponent(u)      // wraps the body in {contents:"…"}
+  ];
+  for(const ru of relays){
     try{
-      const r=await fetchTimeout(AO(base+"&cb="+(Date.now()+a)),9000); if(!r.ok) continue;
-      const j=await r.json(), res=j&&j.chart&&j.chart.result&&j.chart.result[0];
+      const r=await fetchTimeout(ru,9000); if(!r.ok) continue;
+      let j=await r.json();
+      if(j && typeof j.contents==="string") j=JSON.parse(j.contents); // unwrap allorigins /get
+      const res=j&&j.chart&&j.chart.result&&j.chart.result[0];
       if(!res||!res.timestamp||!res.indicators) continue;
       const cl=res.indicators.quote[0].close, ts=res.timestamp, T=[],P=[];
       for(let i=0;i<ts.length;i++){ if(cl[i]!=null){ T.push(ts[i]); P.push(cl[i]); } }
       if(P.length>1) return {times:T,prices:P};
-    }catch(e){}
+    }catch(e){/* try next relay */}
   }
   return null;
 }
